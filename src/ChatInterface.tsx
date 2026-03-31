@@ -6,6 +6,61 @@ import { streamChat } from './api'
 import type { Message } from './types'
 
 const STORAGE_KEY = 'chat_history'
+const API_KEY_STORAGE = 'zhipu_api_key'
+
+function ApiKeyModal({ onClose }: { onClose: () => void }) {
+  const [value, setValue] = useState(() => localStorage.getItem(API_KEY_STORAGE) ?? '')
+
+  function save() {
+    const trimmed = value.trim()
+    if (trimmed) {
+      localStorage.setItem(API_KEY_STORAGE, trimmed)
+    } else {
+      localStorage.removeItem(API_KEY_STORAGE)
+    }
+    onClose()
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter') save()
+    if (e.key === 'Escape') onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div
+        className="bg-white rounded-xl shadow-xl w-[90%] max-w-md p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-base font-semibold text-[#333] mb-1">设置 API Key</h2>
+        <p className="text-xs text-gray-400 mb-4">Key 仅保存在本地浏览器，不会上传</p>
+        <input
+          type="password"
+          autoFocus
+          className="w-full border border-[#d9d9d9] rounded-lg px-3 py-2 text-sm outline-none focus:border-[#07c160] mb-4"
+          placeholder="请输入智谱 AI API Key"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+        />
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-100 transition-colors"
+          >
+            取消
+          </button>
+          <button
+            onClick={save}
+            className="px-4 py-2 rounded-lg bg-[#07c160] text-white text-sm font-medium hover:bg-[#06ad56] transition-colors"
+          >
+            保存
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false)
@@ -47,6 +102,7 @@ export default function ChatInterface() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showApiKey, setShowApiKey] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
@@ -137,9 +193,15 @@ export default function ChatInterface() {
 
   return (
     <div className="flex flex-col h-screen bg-[#ededed]">
+      {showApiKey && <ApiKeyModal onClose={() => setShowApiKey(false)} />}
       {/* Header */}
       <div className="bg-[#f7f7f7] border-b border-[#d9d9d9] px-4 py-3 flex items-center justify-between shadow-sm">
-        <div className="w-16" />
+        <button
+          onClick={() => setShowApiKey(true)}
+          className="text-xs text-[#576b95] hover:text-[#07c160] transition-colors w-16"
+        >
+          API Key
+        </button>
         <span className="text-base font-medium text-[#333]">AI 助手</span>
         <button
           onClick={clearHistory}

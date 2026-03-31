@@ -1,7 +1,6 @@
 import type { Message } from './types'
 
 const API_URL = import.meta.env.VITE_ZHIPU_API_URL ?? 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
-const API_KEY = import.meta.env.VITE_ZHIPU_API_KEY as string
 const MODEL = import.meta.env.VITE_ZHIPU_MODEL ?? 'glm-4'
 
 export async function streamChat(
@@ -9,11 +8,14 @@ export async function streamChat(
   onChunk: (text: string) => void,
   signal?: AbortSignal
 ): Promise<void> {
+  const apiKey = localStorage.getItem('zhipu_api_key') ?? import.meta.env.VITE_ZHIPU_API_KEY
+  if (!apiKey) throw new Error('API Key 未设置，请点击右上角设置按钮填入 API Key')
+
   const response = await fetch(API_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({ model: MODEL, messages, stream: true }),
     signal,
