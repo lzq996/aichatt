@@ -1,22 +1,27 @@
 import type { Message } from './types'
 
-const API_URL = import.meta.env.VITE_ZHIPU_API_URL ?? 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
 const MODEL = import.meta.env.VITE_ZHIPU_MODEL ?? 'glm-4'
+// 有代理时走代理，否则直连（本地开发用）
+const USE_PROXY = import.meta.env.VITE_USE_PROXY === 'true'
+const DIRECT_URL = import.meta.env.VITE_ZHIPU_API_URL ?? 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
+const API_URL = USE_PROXY ? '/api/chat' : DIRECT_URL
 
 export async function streamChat(
   messages: Message[],
   onChunk: (text: string) => void,
   signal?: AbortSignal
 ): Promise<void> {
-  const apiKey = localStorage.getItem('zhipu_api_key') ?? import.meta.env.VITE_ZHIPU_API_KEY
-  if (!apiKey) throw new Error('API Key 未设置，请点击右上角设置按钮填入 API Key')
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+
+  if (!USE_PROXY) {
+    const apiKey = localStorage.getItem('zhipu_api_key') ?? import.meta.env.VITE_ZHIPU_API_KEY
+    if (!apiKey) throw new Error('API Key 未设置，请点击左上角 API Key 按钮填入')
+    headers['Authorization'] = `Bearer ${apiKey}`
+  }
 
   const response = await fetch(API_URL, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
+    headers,
     body: JSON.stringify({ model: MODEL, messages, stream: true }),
     signal,
   })
