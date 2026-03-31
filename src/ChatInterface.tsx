@@ -169,9 +169,11 @@ export default function ChatInterface() {
           return next
         })
         setError(
-          e.message.includes('API error')
-            ? `请求失败：${e.message}，请检查网络或 API Key 后重试。`
-            : '网络异常，请检查网络连接后重试。'
+          e.message.includes('API Key')
+            ? e.message
+            : e.message.includes('API error')
+            ? `请求失败：${e.message}`
+            : 'API Key 为空或无效，请点击左上角 API Key 按钮填入'
         )
       }
     } finally {
